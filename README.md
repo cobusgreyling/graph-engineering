@@ -1,6 +1,10 @@
-# simple-graph-agents
+# Graph Engineering
 
-[![CI](https://github.com/cobusgreyling/simple-graph-agents/actions/workflows/ci.yml/badge.svg)](https://github.com/cobusgreyling/simple-graph-agents/actions/workflows/ci.yml)
+<p align="center">
+  <img src="assets/header.jpg" alt="Graph Engineering" width="100%" />
+</p>
+
+[![CI](https://github.com/cobusgreyling/graph-engineering/actions/workflows/ci.yml/badge.svg)](https://github.com/cobusgreyling/graph-engineering/actions/workflows/ci.yml)
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](LICENSE)
 [![Python 3.9+](https://img.shields.io/badge/python-3.9+-blue.svg)](https://www.python.org/downloads/)
 
@@ -31,11 +35,11 @@ Most agent frameworks bury the control plane under adapters, schemas, and vendor
 
 ```bash
 # from GitHub
-pip install "git+https://github.com/cobusgreyling/simple-graph-agents.git"
+pip install "git+https://github.com/cobusgreyling/graph-engineering.git"
 
 # or clone and install editable
-git clone https://github.com/cobusgreyling/simple-graph-agents.git
-cd simple-graph-agents
+git clone https://github.com/cobusgreyling/graph-engineering.git
+cd graph-engineering
 pip install -e ".[dev]"
 ```
 
