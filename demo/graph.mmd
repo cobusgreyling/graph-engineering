@@ -1,0 +1,10 @@
+flowchart TD
+    research["research"]
+    write["write"]
+    verify["verify"]
+    END((END))
+    research --> write
+    write --> verify
+    verify -->|pass| END
+    verify -->|retry| write
+    start((start)) --> research
