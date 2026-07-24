@@ -14,7 +14,7 @@ from pathlib import Path
 # Allow running as `python examples/research_write_verify.py` from repo root
 sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
 
-from simple_graph import END, Graph
+from simple_graph_agents import END, Graph
 
 
 # ---------------------------------------------------------------------------
@@ -127,18 +127,22 @@ def main() -> None:
     print(f"(also wrote {out})\n")
 
     print("=== Run ===")
-    final = g.run(
+    result = g.run(
         {"topic": "simple graph agents"},
         verbose=True,
         max_steps=20,
     )
 
     print("\n=== Trail ===")
-    print(" -> ".join(g.history))
+    print(" -> ".join(result.history))
 
     print("\n=== Final draft ===")
-    print(final.get("draft", ""))
-    print(f"passed={final.get('passed')} attempts={final.get('attempt')}")
+    print(result.state.get("draft", ""))
+    print(
+        f"passed={result.state.get('passed')} "
+        f"attempts={result.state.get('attempt')} "
+        f"steps={result.steps}"
+    )
 
 
 if __name__ == "__main__":

@@ -1,0 +1,50 @@
+[build-system]
+requires = ["setuptools>=61"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "simple-graph-agents"
+version = "0.1.0"
+description = "Zero-dependency Python graph runtime for agent loops with Mermaid export"
+readme = "README.md"
+license = { text = "MIT" }
+requires-python = ">=3.9"
+authors = [{ name = "Cobus Greyling" }]
+keywords = [
+    "agents",
+    "graph",
+    "workflow",
+    "mermaid",
+    "langgraph",
+    "zero-dependency",
+]
+classifiers = [
+    "Development Status :: 4 - Beta",
+    "Intended Audience :: Developers",
+    "License :: OSI Approved :: MIT License",
+    "Programming Language :: Python :: 3",
+    "Programming Language :: Python :: 3.9",
+    "Programming Language :: Python :: 3.10",
+    "Programming Language :: Python :: 3.11",
+    "Programming Language :: Python :: 3.12",
+    "Programming Language :: Python :: 3.13",
+    "Topic :: Software Development :: Libraries",
+    "Typing :: Typed",
+]
+dependencies = []
+
+[project.optional-dependencies]
+dev = ["pytest>=7.0"]
+graphviz = ["graphviz>=0.20"]
+
+[project.urls]
+Homepage = "https://github.com/cobusgreyling/simple-graph-agents"
+Repository = "https://github.com/cobusgreyling/simple-graph-agents"
+Issues = "https://github.com/cobusgreyling/simple-graph-agents/issues"
+
+[tool.setuptools.packages.find]
+include = ["simple_graph_agents*"]
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+pythonpath = ["."]

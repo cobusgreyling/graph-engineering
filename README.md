@@ -1,5 +1,9 @@
 # simple-graph-agents
 
+[![CI](https://github.com/cobusgreyling/simple-graph-agents/actions/workflows/ci.yml/badge.svg)](https://github.com/cobusgreyling/simple-graph-agents/actions/workflows/ci.yml)
+[![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](LICENSE)
+[![Python 3.9+](https://img.shields.io/badge/python-3.9+-blue.svg)](https://www.python.org/downloads/)
+
 Zero-dependency Python graph runtime for small agent loops.
 
 Nodes are **plain functions** that take and return a shared `dict` state. Wire them with fixed edges or **conditional edges** (a router function returns the next node name). Call `render_mermaid()` for instant control-flow diagrams.
@@ -14,31 +18,44 @@ research ──► write ──► verify ──► END
 
 Most agent frameworks bury the control plane under adapters, schemas, and vendor SDKs. This repo is intentionally tiny:
 
-- one file core ([`simple_graph.py`](simple_graph.py))
+- small installable package ([`simple_graph_agents/`](simple_graph_agents/))
 - no required third-party packages
 - Mermaid out of the box (optional Graphviz if you want images)
 - a research → write → verify example with test feedback
+- `RunResult` + `on_step` hooks for inspectable runs
+
+**Use this** for teaching, demos, and tiny scripts where you want readable control flow.  
+**Use LangGraph (or similar)** when you need durable checkpoints, streaming platforms, or multi-actor orchestration.
 
 ## Install
 
-Nothing to install for the runtime.
+```bash
+# from GitHub
+pip install "git+https://github.com/cobusgreyling/simple-graph-agents.git"
+
+# or clone and install editable
+git clone https://github.com/cobusgreyling/simple-graph-agents.git
+cd simple-graph-agents
+pip install -e ".[dev]"
+```
+
+Nothing is required at runtime beyond the standard library.
 
 ```bash
-git clone <your-fork>/simple-graph-agents
-cd simple-graph-agents
 python examples/research_write_verify.py
 ```
 
 Optional image export:
 
 ```bash
-pip install graphviz   # also need system graphviz binaries
+pip install "simple-graph-agents[graphviz]"   # also need system graphviz binaries
+# or: pip install graphviz
 ```
 
 ## Quick start
 
 ```python
-from simple_graph import Graph, END
+from simple_graph_agents import Graph, END
 
 def research(state):
     state["notes"] = ["fact A", "fact B"]
@@ -69,24 +86,41 @@ g.add_conditional_edges(
 )
 
 result = g.run({"topic": "agents"})
-print(result["draft"])
+print(result.state["draft"])
+print(result.history)   # node trail including END
+print(result.steps)
 print(g.render_mermaid())
+```
+
+Clone-and-run without install still works via the root shim:
+
+```python
+from simple_graph import Graph, END  # re-exports simple_graph_agents
 ```
 
 ## API
 
-| Method | Purpose |
-|--------|---------|
+| Method / type | Purpose |
+|---------------|---------|
 | `add_node(name, fn)` | Register `fn(state: dict) -> dict` |
-| `add_edge(src, tgt)` | Fixed edge; `tgt` may be `END` |
+| `add_edge(src, tgt)` | Fixed edge; `tgt` may be `END` (no silent overwrite) |
 | `add_conditional_edges(src, router, path_map=None)` | `router(state) -> str` next node (or key into `path_map`) |
-| `set_entry(name)` | Where `run` starts |
-| `run(state, max_steps=50, verbose=False)` | Execute until `END` |
+| `set_entry(name)` / `entry(name)` | Where `run` starts |
+| `run(state, max_steps=50, verbose=False, on_step=None)` | Execute until `END`; returns `RunResult` |
+| `RunResult.state` / `.history` / `.steps` | Final state, node trail, step count |
+| `on_step(name, state, step)` | Optional hook after each node |
 | `render_mermaid()` / `render(path=None)` | Mermaid flowchart string |
 | `render_graphviz(path=None, format="png")` | DOT (+ optional render via `graphviz` package) |
 | `history` | Node trail from last run (includes `END`) |
+| `GraphError` | Definition and runtime errors |
 
 `END` is the reserved terminal sentinel (`"__end__"`).
+
+### State notes
+
+- Input state is **shallow-copied**; nested lists/dicts are shared with the caller.
+- Nodes may mutate and return the same object, or return a new dict.
+- A node with no outgoing edge **implicitly ends** (routes to `END`).
 
 ## Mermaid visualization
 
@@ -149,6 +183,15 @@ python -m http.server 8765 --directory demo
 
 Edit the source pane and hit **Render**, or paste output from `render_mermaid()`.
 
+## Development
+
+```bash
+pip install -e ".[dev]"
+pytest -q
+```
+
+CI runs pytest on Python 3.9–3.13 and executes the example script.
+
 ## Design notes
 
 - **State is a dict.** Nodes may mutate and return the same object, or return a new dict.
@@ -156,17 +199,24 @@ Edit the source pane and hit **Render**, or paste output from `render_mermaid()`
 - **No LLM client.** Swap stubs in the example for your provider of choice.
 - **Cycles are allowed** (retry loops). Guard with `max_steps`.
 - **Routers return strings.** Prefer `path_map` so Mermaid edge labels stay stable.
+- **Duplicate edges raise.** Fixed and conditional edges cannot be redefined on the same source.
 
 ## Layout
 
 ```
 simple-graph-agents/
-├── simple_graph.py              # Graph, END, Mermaid / DOT
+├── simple_graph_agents/         # installable package
+│   ├── __init__.py
+│   └── graph.py                 # Graph, END, RunResult, Mermaid / DOT
+├── simple_graph.py              # clone-and-run shim
 ├── examples/
 │   └── research_write_verify.py # research → write → verify loop
 ├── demo/
 │   ├── index.html               # vanilla JS Mermaid viewer
 │   └── graph.mmd                # generated by the example
+├── tests/
+│   └── test_graph.py
+├── pyproject.toml
 └── README.md
 ```
 

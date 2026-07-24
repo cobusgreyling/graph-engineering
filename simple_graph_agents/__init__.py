@@ -1,14 +1,6 @@
-"""
-Backward-compatible entry point for clone-and-run usage::
+"""Zero-dependency Python graph runtime for agent loops with Mermaid export."""
 
-    from simple_graph import Graph, END
-
-Prefer the installable package when possible::
-
-    from simple_graph_agents import Graph, END
-"""
-
-from simple_graph_agents import (
+from .graph import (
     END,
     Graph,
     GraphError,
@@ -17,8 +9,9 @@ from simple_graph_agents import (
     RunResult,
     State,
     StepHook,
-    __version__,
 )
+
+__version__ = "0.1.0"
 
 __all__ = [
     "Graph",
