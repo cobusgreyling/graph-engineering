@@ -1,7 +1,7 @@
 # Graph Engineering
 
 <p align="center">
-  <img src="assets/header.jpg" alt="Graph Engineering" width="100%" />
+  <img src="GE.jpg" alt="Graph Engineering" width="100%" />
 </p>
 
 [![CI](https://github.com/cobusgreyling/graph-engineering/actions/workflows/ci.yml/badge.svg)](https://github.com/cobusgreyling/graph-engineering/actions/workflows/ci.yml)
