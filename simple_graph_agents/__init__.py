@@ -9,15 +9,17 @@ from .graph import (
     RunResult,
     State,
     StepHook,
+    StepRecord,
 )
 
-__version__ = "0.1.0"
+__version__ = "0.2.0"
 
 __all__ = [
     "Graph",
     "END",
     "GraphError",
     "RunResult",
+    "StepRecord",
     "State",
     "NodeFn",
     "RouterFn",

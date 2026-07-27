@@ -17,6 +17,7 @@ from simple_graph_agents import (
     RunResult,
     State,
     StepHook,
+    StepRecord,
     __version__,
 )
 
@@ -25,6 +26,7 @@ __all__ = [
     "END",
     "GraphError",
     "RunResult",
+    "StepRecord",
     "State",
     "NodeFn",
     "RouterFn",

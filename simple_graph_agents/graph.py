@@ -8,8 +8,9 @@ END is a reserved terminal node.
 
 from __future__ import annotations
 
+import time
 from dataclasses import dataclass, field
-from typing import Any, Callable, Dict, List, Mapping, Optional, Sequence
+from typing import Any, Callable, Dict, List, Mapping, Optional, Sequence, Tuple
 
 State = Dict[str, Any]
 NodeFn = Callable[[State], State]
@@ -26,17 +27,32 @@ class GraphError(Exception):
 
 
 @dataclass
+class StepRecord:
+    """One executed node during a run."""
+
+    name: str
+    step: int
+    duration_ms: Optional[float] = None
+
+
+@dataclass
 class RunResult:
     """Outcome of a single ``Graph.run`` invocation."""
 
     state: State
     history: List[str] = field(default_factory=list)
     steps: int = 0
+    trace: List[StepRecord] = field(default_factory=list)
+    duration_ms: Optional[float] = None
 
     def __iter__(self):
         """Allow ``state, history = result``-style unpacking of the main fields."""
         yield self.state
         yield self.history
+
+    def trail(self, sep: str = " -> ") -> str:
+        """Human-readable node trail, e.g. ``research -> write -> END``."""
+        return sep.join(self.history)
 
 
 class Graph:
@@ -128,9 +144,89 @@ class Graph:
         self._entry = name
         return self
 
-    # Fluent aliases
+    # Fluent aliases ---------------------------------------------------
+
+    def node(self, name: str, fn: NodeFn) -> "Graph":
+        """Alias for :meth:`add_node`."""
+        return self.add_node(name, fn)
+
+    def edge(self, source: str, target: str) -> "Graph":
+        """Alias for :meth:`add_edge`."""
+        return self.add_edge(source, target)
+
+    def branch(
+        self,
+        source: str,
+        router: RouterFn,
+        path_map: Optional[Mapping[str, str]] = None,
+    ) -> "Graph":
+        """Alias for :meth:`add_conditional_edges`."""
+        return self.add_conditional_edges(source, router, path_map)
+
     def entry(self, name: str) -> "Graph":
+        """Alias for :meth:`set_entry`."""
         return self.set_entry(name)
+
+    def chain(self, *names: str, end: bool = True) -> "Graph":
+        """
+        Wire a linear path through existing nodes.
+
+        Example::
+
+            g.chain("research", "write", "verify")  # + edge to END by default
+        """
+        if len(names) < 1:
+            raise GraphError("chain() requires at least one node name")
+        for name in names:
+            if name not in self._nodes:
+                raise GraphError(f"Unknown node in chain: {name!r}")
+        for a, b in zip(names, names[1:]):
+            self.add_edge(a, b)
+        if end:
+            self.add_edge(names[-1], END)
+        return self
+
+    # ------------------------------------------------------------------
+    # Validation
+    # ------------------------------------------------------------------
+
+    def validate(self) -> "Graph":
+        """
+        Check structural soundness before running.
+
+        Raises GraphError if the graph is incomplete or has unreachable nodes.
+        Returns self for chaining.
+        """
+        if not self._nodes:
+            raise GraphError("Graph has no nodes")
+        if self._entry is None:
+            raise GraphError("Entry node not set; call set_entry() first")
+        if self._entry not in self._nodes:
+            raise GraphError(f"Entry node missing: {self._entry!r}")
+
+        # Reachability from entry (static — conditional edges use path_map targets)
+        reachable = set()
+        stack = [self._entry]
+        while stack:
+            n = stack.pop()
+            if n in reachable or n == END:
+                continue
+            reachable.add(n)
+            if n in self._edges:
+                stack.append(self._edges[n])
+            elif n in self._conditional:
+                path_map = self._path_maps.get(n)
+                if path_map:
+                    stack.extend(path_map.values())
+                # without path_map, destinations are dynamic — skip static check
+
+        unreachable = set(self._nodes) - reachable
+        if unreachable:
+            raise GraphError(
+                f"Unreachable node(s) from entry {self._entry!r}: "
+                f"{sorted(unreachable)}"
+            )
+        return self
 
     # ------------------------------------------------------------------
     # Runtime
@@ -143,6 +239,8 @@ class Graph:
         max_steps: int = 50,
         verbose: bool = False,
         on_step: Optional[StepHook] = None,
+        timed: bool = False,
+        validate: bool = False,
     ) -> RunResult:
         """
         Execute the graph starting at the entry node.
@@ -164,7 +262,13 @@ class Graph:
         on_step:
             Optional callback ``(node_name, state, step_index) -> None``
             invoked after each successful node execution.
+        timed:
+            If True, record per-node and total wall-clock duration in ms.
+        validate:
+            If True, run :meth:`validate` before execution.
         """
+        if validate:
+            self.validate()
         if self._entry is None:
             raise GraphError("Entry node not set; call set_entry() first")
         if not self._nodes:
@@ -173,7 +277,9 @@ class Graph:
         current: State = dict(state or {})
         node_name: str = self._entry
         history: List[str] = []
+        trace: List[StepRecord] = []
         steps = 0
+        t0 = time.perf_counter() if timed else None
 
         while node_name != END:
             if steps >= max_steps:
@@ -189,7 +295,9 @@ class Graph:
                 print(f"[{steps}] → {node_name}")
 
             fn = self._nodes[node_name]
+            n0 = time.perf_counter() if timed else None
             result = fn(current)
+            n_ms = (time.perf_counter() - n0) * 1000.0 if n0 is not None else None
             if result is None:
                 raise GraphError(
                     f"Node {node_name!r} returned None; must return a state dict"
@@ -199,6 +307,8 @@ class Graph:
                     f"Node {node_name!r} must return a dict, got {type(result).__name__}"
                 )
             current = result
+
+            trace.append(StepRecord(name=node_name, step=steps, duration_ms=n_ms))
 
             if on_step is not None:
                 on_step(node_name, current, steps)
@@ -210,8 +320,15 @@ class Graph:
         if verbose:
             print(f"[{steps}] → END")
 
+        total_ms = (time.perf_counter() - t0) * 1000.0 if t0 is not None else None
         self._history = list(history)
-        return RunResult(state=current, history=list(history), steps=steps)
+        return RunResult(
+            state=current,
+            history=list(history),
+            steps=steps,
+            trace=trace,
+            duration_ms=total_ms,
+        )
 
     def _next(self, source: str, state: State) -> str:
         if source in self._conditional:
@@ -299,6 +416,40 @@ class Graph:
                 f.write(src)
         return src
 
+    def render_ascii(self) -> str:
+        """
+        Terminal-friendly ASCII sketch of the control flow.
+
+        Great for README snippets, logs, and demos without a browser.
+        """
+        lines: List[str] = [f"Graph: {self.name}"]
+        if self._entry:
+            lines.append(f"entry: {self._entry}")
+        lines.append("")
+        lines.append("nodes:")
+        for name in self._nodes:
+            marker = " *" if name == self._entry else ""
+            lines.append(f"  - {name}{marker}")
+        lines.append("")
+        lines.append("edges:")
+        for src, tgt in self._edges.items():
+            tgt_label = "END" if tgt == END else tgt
+            lines.append(f"  {src} --> {tgt_label}")
+        for src in self._conditional:
+            path_map = self._path_maps.get(src)
+            if path_map:
+                for label, tgt in path_map.items():
+                    tgt_label = "END" if tgt == END else tgt
+                    lines.append(f"  {src} -[{label}]-> {tgt_label}")
+            else:
+                lines.append(f"  {src} -[router]-> ?")
+        # Implicit ends
+        wired = set(self._edges) | set(self._conditional)
+        for name in self._nodes:
+            if name not in wired:
+                lines.append(f"  {name} --> END  (implicit)")
+        return "\n".join(lines) + "\n"
+
     def render_graphviz(self, path: Optional[str] = None, format: str = "png") -> str:
         """
         Optional Graphviz DOT export. Requires the `graphviz` package only if
@@ -348,6 +499,25 @@ class Graph:
     def nodes(self) -> Sequence[str]:
         return list(self._nodes)
 
+    def edges(self) -> List[Tuple[str, str, Optional[str]]]:
+        """
+        Return a list of ``(source, target, label)`` triples.
+
+        Fixed edges have ``label=None``. Conditional edges use path_map labels
+        (or ``"router"`` when no path_map is set).
+        """
+        out: List[Tuple[str, str, Optional[str]]] = []
+        for src, tgt in self._edges.items():
+            out.append((src, tgt, None))
+        for src in self._conditional:
+            path_map = self._path_maps.get(src)
+            if path_map:
+                for label, tgt in path_map.items():
+                    out.append((src, tgt, str(label)))
+            else:
+                out.append((src, END, "router"))
+        return out
+
     def __repr__(self) -> str:
         return (
             f"Graph(name={self.name!r}, nodes={list(self._nodes)}, "
@@ -376,6 +546,7 @@ __all__ = [
     "END",
     "GraphError",
     "RunResult",
+    "StepRecord",
     "State",
     "NodeFn",
     "RouterFn",

@@ -6,7 +6,7 @@ import doctest
 
 import pytest
 
-from simple_graph_agents import END, Graph, GraphError, RunResult, __version__
+from simple_graph_agents import END, Graph, GraphError, RunResult, StepRecord, __version__
 from simple_graph_agents import graph as graph_mod
 
 
@@ -26,7 +26,7 @@ def _linear() -> Graph:
 
 
 def test_version():
-    assert __version__ == "0.1.0"
+    assert __version__ == "0.2.0"
 
 
 def test_add_node_rejects_end_and_duplicates():
@@ -341,6 +341,96 @@ def test_entry_alias():
     g.add_node("a", lambda s: s)
     g.entry("a")
     assert g.run({}).history == ["a", END]
+
+
+def test_fluent_aliases_and_chain():
+    g = (
+        Graph("fluent")
+        .node("a", lambda s: {**s, "x": 1})
+        .node("b", lambda s: {**s, "y": 2})
+        .entry("a")
+        .chain("a", "b")
+    )
+    result = g.run({})
+    assert result.state == {"x": 1, "y": 2}
+    assert result.history == ["a", "b", END]
+
+
+def test_chain_without_end():
+    g = Graph()
+    g.node("a", lambda s: s).node("b", lambda s: {**s, "ok": True}).entry("a")
+    g.chain("a", "b", end=False)
+    # b has no edge → implicit END
+    assert g.run({}).state["ok"] is True
+
+
+def test_branch_alias():
+    g = (
+        Graph()
+        .node("a", lambda s: {**s, "n": 1})
+        .entry("a")
+        .branch("a", lambda s: "done", path_map={"done": END})
+    )
+    assert g.run({}).history == ["a", END]
+
+
+def test_validate_unreachable():
+    g = Graph()
+    g.add_node("a", lambda s: s)
+    g.add_node("orphan", lambda s: s)
+    g.set_entry("a")
+    g.add_edge("a", END)
+    with pytest.raises(GraphError, match="Unreachable"):
+        g.validate()
+
+
+def test_validate_ok_and_run_flag():
+    g = _linear()
+    assert g.validate() is g
+    result = g.run({}, validate=True)
+    assert result.steps == 2
+
+
+def test_render_ascii():
+    g = Graph(name="demo")
+    g.add_node("research", lambda s: s)
+    g.add_node("write", lambda s: s)
+    g.set_entry("research")
+    g.add_edge("research", "write")
+    g.add_conditional_edges(
+        "write",
+        lambda s: "ok",
+        path_map={"ok": END, "retry": "write"},
+    )
+    ascii_out = g.render_ascii()
+    assert "Graph: demo" in ascii_out
+    assert "entry: research" in ascii_out
+    assert "research --> write" in ascii_out
+    assert "write -[ok]-> END" in ascii_out
+
+
+def test_timed_run_and_trail():
+    g = _linear()
+    result = g.run({}, timed=True)
+    assert result.duration_ms is not None
+    assert result.duration_ms >= 0
+    assert len(result.trace) == 2
+    assert all(isinstance(t, StepRecord) for t in result.trace)
+    assert result.trace[0].name == "a"
+    assert result.trace[0].duration_ms is not None
+    assert result.trail() == f"a -> b -> {END}"
+
+
+def test_edges_listing():
+    g = Graph()
+    g.add_node("a", lambda s: s)
+    g.add_node("b", lambda s: s)
+    g.set_entry("a")
+    g.add_edge("a", "b")
+    g.add_conditional_edges("b", lambda s: "x", path_map={"x": END})
+    edges = g.edges()
+    assert ("a", "b", None) in edges
+    assert ("b", END, "x") in edges
 
 
 def test_backward_compatible_simple_graph_import():

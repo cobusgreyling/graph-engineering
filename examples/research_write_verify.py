@@ -100,24 +100,28 @@ def route_after_verify(state: dict) -> str:
 # ---------------------------------------------------------------------------
 
 def build_graph() -> Graph:
-    g = Graph(name="research_write_verify")
-    g.add_node("research", research)
-    g.add_node("write", write)
-    g.add_node("verify", verify)
-
-    g.set_entry("research")
-    g.add_edge("research", "write")
-    g.add_edge("write", "verify")
-    g.add_conditional_edges(
-        "verify",
-        route_after_verify,
-        path_map={"pass": END, "retry": "write"},
+    return (
+        Graph(name="research_write_verify")
+        .node("research", research)
+        .node("write", write)
+        .node("verify", verify)
+        .entry("research")
+        .edge("research", "write")
+        .edge("write", "verify")
+        .branch(
+            "verify",
+            route_after_verify,
+            path_map={"pass": END, "retry": "write"},
+        )
+        .validate()
     )
-    return g
 
 
 def main() -> None:
     g = build_graph()
+
+    print("=== ASCII ===")
+    print(g.render_ascii())
 
     print("=== Mermaid ===")
     mermaid = g.render_mermaid()
@@ -131,17 +135,19 @@ def main() -> None:
         {"topic": "simple graph agents"},
         verbose=True,
         max_steps=20,
+        timed=True,
     )
 
     print("\n=== Trail ===")
-    print(" -> ".join(result.history))
+    print(result.trail())
 
     print("\n=== Final draft ===")
     print(result.state.get("draft", ""))
     print(
         f"passed={result.state.get('passed')} "
         f"attempts={result.state.get('attempt')} "
-        f"steps={result.steps}"
+        f"steps={result.steps} "
+        f"ms={result.duration_ms:.2f}"
     )
 
 
