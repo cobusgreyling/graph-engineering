@@ -45,3 +45,22 @@ Optional extras (like Graphviz) are fine behind `optional-dependencies`.
 2. Update `CHANGELOG.md`
 3. `pytest -q` + run all examples
 4. Tag `vX.Y.Z` and push
+5. Create a GitHub Release (or run **Publish** workflow) — uploads to PyPI via Trusted Publishing
+
+### One-time PyPI Trusted Publishing setup
+
+1. Log in at [pypi.org](https://pypi.org)
+2. Open [Publishing](https://pypi.org/manage/account/publishing/)
+3. Under **Add a new pending publisher**:
+   - **PyPI Project Name:** `simple-graph-agents`
+   - **Owner:** `cobusgreyling`
+   - **Repository name:** `graph-engineering`
+   - **Workflow name:** `publish.yml`
+   - **Environment name:** `pypi`
+4. Save, then run the **Publish** workflow (Actions → Publish → Run workflow) or publish a GitHub Release
+
+Regenerate the README terminal GIF after demo script changes:
+
+```bash
+python scripts/make_demo_gif.py
+```

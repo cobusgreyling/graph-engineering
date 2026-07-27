@@ -15,11 +15,20 @@
 
 <p align="center">
   <a href="https://github.com/cobusgreyling/graph-engineering/actions/workflows/ci.yml"><img src="https://github.com/cobusgreyling/graph-engineering/actions/workflows/ci.yml/badge.svg" alt="CI" /></a>
+  <a href="https://pypi.org/project/simple-graph-agents/"><img src="https://img.shields.io/pypi/v/simple-graph-agents.svg" alt="PyPI" /></a>
   <a href="LICENSE"><img src="https://img.shields.io/badge/License-MIT-yellow.svg" alt="MIT" /></a>
   <a href="https://www.python.org/downloads/"><img src="https://img.shields.io/badge/python-3.9%2B-blue.svg" alt="Python 3.9+" /></a>
   <img src="https://img.shields.io/badge/deps-0-brightgreen.svg" alt="Zero dependencies" />
-  <img src="https://img.shields.io/badge/install-pip%20install%20git%2B…-informational.svg" alt="Install" />
+  <a href="https://pypi.org/project/simple-graph-agents/"><img src="https://img.shields.io/badge/pip-install%20simple--graph--agents-blue.svg" alt="pip install" /></a>
   <a href="https://cobusgreyling.github.io/graph-engineering/"><img src="https://img.shields.io/badge/demo-live%20Mermaid-ff69b4.svg" alt="Live demo" /></a>
+</p>
+
+<p align="center">
+  <img src="assets/demo.gif" alt="Terminal demo: research → write → verify retry loop" width="720" />
+</p>
+
+<p align="center">
+  <em>~20s demo — install, run the retry loop, print the trail + Mermaid.</em>
 </p>
 
 ---
@@ -65,7 +74,7 @@ flowchart TD
 ## 30-second quickstart
 
 ```bash
-pip install "git+https://github.com/cobusgreyling/graph-engineering.git"
+pip install simple-graph-agents
 ```
 
 ```python
@@ -135,10 +144,14 @@ If LangGraph is an airport, this is a bicycle. Both move people. Pick the right 
 ## Install
 
 ```bash
-# from GitHub
+pip install simple-graph-agents
+```
+
+From GitHub (main) or editable with tests:
+
+```bash
 pip install "git+https://github.com/cobusgreyling/graph-engineering.git"
 
-# editable + tests
 git clone https://github.com/cobusgreyling/graph-engineering.git
 cd graph-engineering
 pip install -e ".[dev]"
@@ -151,8 +164,11 @@ Optional image export:
 pip install "simple-graph-agents[graphviz]"   # + system graphviz binaries
 ```
 
-Package import name: `simple_graph_agents`  
-Repo / brand name: **Graph Engineering**
+| | |
+|--|--|
+| **PyPI** | [`simple-graph-agents`](https://pypi.org/project/simple-graph-agents/) |
+| **Import** | `simple_graph_agents` |
+| **Brand** | **Graph Engineering** |
 
 ---
 

@@ -11,6 +11,8 @@
 - [x] Multiple example patterns (retry, tools, multi-agent)
 - [x] CI green on 3.9–3.13
 - [x] MIT license
+- [x] Terminal demo GIF in README
+- [x] PyPI package `simple-graph-agents` + publish workflow
 
 ## Enable GitHub polish (5 minutes)
 

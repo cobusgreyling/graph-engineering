@@ -15,10 +15,13 @@
 - `py.typed` marker
 - GitHub Pages deploy for the Mermaid demo
 - CONTRIBUTING, LAUNCH, CHANGELOG
+- Terminal demo GIF (`assets/demo.gif`) + `scripts/make_demo_gif.py`
+- PyPI packaging + Trusted Publishing workflow (`.github/workflows/publish.yml`)
 
 ### Fixed
 
 - `pyproject.toml` URLs now point at `graph-engineering` (not the old name)
+
 
 ## 0.1.0
 
