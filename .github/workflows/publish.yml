@@ -7,7 +7,7 @@ on:
 
 permissions:
   contents: read
-  id-token: write  # Trusted Publishing (OIDC) when no API token secret
+  id-token: write  # Trusted Publishing when PYPI_API_TOKEN is unset
 
 jobs:
   publish:
@@ -26,13 +26,8 @@ jobs:
       - name: Build sdist and wheel
         run: python -m build
 
-      # Prefer API token if set; otherwise OIDC Trusted Publishing
-      - name: Publish to PyPI (API token)
-        if: ${{ secrets.PYPI_API_TOKEN != '' }}
+      # password set → API token; empty → OIDC trusted publishing
+      - name: Publish to PyPI
         uses: pypa/gh-action-pypi-publish@release/v1
         with:
           password: ${{ secrets.PYPI_API_TOKEN }}
-
-      - name: Publish to PyPI (Trusted Publishing)
-        if: ${{ secrets.PYPI_API_TOKEN == '' }}
-        uses: pypa/gh-action-pypi-publish@release/v1
