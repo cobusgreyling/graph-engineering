@@ -11,9 +11,8 @@ permissions:
 jobs:
   publish:
     runs-on: ubuntu-latest
-    environment:
-      name: pypi
-      url: https://pypi.org/project/simple-graph-agents/
+    # No GitHub Environment — simpler Trusted Publishing match on PyPI
+    # (pending publisher: leave Environment name blank)
     permissions:
       id-token: write  # Trusted Publishing (OIDC)
     steps:

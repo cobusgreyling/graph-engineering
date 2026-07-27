@@ -51,13 +51,15 @@ Optional extras (like Graphviz) are fine behind `optional-dependencies`.
 
 1. Log in at [pypi.org](https://pypi.org)
 2. Open [Publishing](https://pypi.org/manage/account/publishing/)
-3. Under **Add a new pending publisher**:
+3. Under **Add a new pending publisher** (use **PyPI**, not TestPyPI):
    - **PyPI Project Name:** `simple-graph-agents`
    - **Owner:** `cobusgreyling`
    - **Repository name:** `graph-engineering`
-   - **Workflow name:** `publish.yml`
-   - **Environment name:** `pypi`
+   - **Workflow name:** `publish.yml`  (exact filename, not the workflow display name)
+   - **Environment name:** *leave blank*
 4. Save, then run the **Publish** workflow (Actions → Publish → Run workflow) or publish a GitHub Release
+
+If publish fails with `invalid-publisher`, the pending publisher fields do not match the workflow claims. Re-check project name, repo, `publish.yml`, and that Environment is blank.
 
 Regenerate the README terminal GIF after demo script changes:
 
