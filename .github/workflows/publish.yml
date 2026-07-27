@@ -7,14 +7,11 @@ on:
 
 permissions:
   contents: read
+  id-token: write  # Trusted Publishing (OIDC) when no API token secret
 
 jobs:
   publish:
     runs-on: ubuntu-latest
-    # No GitHub Environment — simpler Trusted Publishing match on PyPI
-    # (pending publisher: leave Environment name blank)
-    permissions:
-      id-token: write  # Trusted Publishing (OIDC)
     steps:
       - uses: actions/checkout@v4
 
@@ -29,5 +26,13 @@ jobs:
       - name: Build sdist and wheel
         run: python -m build
 
-      - name: Publish to PyPI
+      # Prefer API token if set; otherwise OIDC Trusted Publishing
+      - name: Publish to PyPI (API token)
+        if: ${{ secrets.PYPI_API_TOKEN != '' }}
+        uses: pypa/gh-action-pypi-publish@release/v1
+        with:
+          password: ${{ secrets.PYPI_API_TOKEN }}
+
+      - name: Publish to PyPI (Trusted Publishing)
+        if: ${{ secrets.PYPI_API_TOKEN == '' }}
         uses: pypa/gh-action-pypi-publish@release/v1
