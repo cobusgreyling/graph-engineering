@@ -1,7 +1,7 @@
 # Graph Engineering
 
 <p align="center">
-  <img src="ge1.jpg" alt="Graph Engineering" width="100%" />
+  <img src="assets/header.png" alt="Graph Engineering — zero-dependency agent graph runtime" width="100%" />
 </p>
 
 <p align="center">
